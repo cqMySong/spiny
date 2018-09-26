@@ -10,13 +10,13 @@ addons:
     packages:
     - mysql-server
     - mysql-client
-build:
+install:
   - ./mvnw -e clean install -DskipTests=true -Dmaven.javadoc.skip=true -Dspring-boot.run.profiles=dev
   - ./mvnw -e clean install -DskipTests=true -Dmaven.javadoc.skip=true -Dspring-boot:run.prifiles=prod
 language: java
 services:
 - mysql
-before_build:
+before_script:
 - chmod +x mvnw
 - sudo mysql -e "use mysql; update user set authentication_string=PASSWORD('123456') where User='root'; update user set plugin='mysql_native_password';FLUSH PRIVILEGES;"
 - sudo service mysql restart
