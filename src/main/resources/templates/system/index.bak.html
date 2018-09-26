@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <div th:replace="./widget/base(title=${system_web_name})"></div>
+    <link rel="stylesheet" type="text/css" href="/css/index.css">
+</head>
+<body>
+<div id="tabsContextMenu" class="easyui-menu" style="width: 140px;display: none">
+    <div id="mm-tabclose" name="6" iconCls="fa fa-refresh">刷新</div>
+    <div class="menu-sep"></div>
+    <div id="div1" name="1" iconCls="fa fa-close">关闭</div>
+    <div id="mm-tabcloseother" name="3">关闭其他</div>
+    <div id="mm-tabcloseall" name="2">关闭全部</div>
+    <div class="menu-sep"></div>
+    <div id="mm-tabcloseright" name="4">关闭右侧标签</div>
+    <div id="mm-tabcloseleft" name="5">关闭左侧标签</div>
+</div>
+
+<div class="easyui-layout" data-options="fit:true">
+    <div title="Header" id="top" data-options="region:'north',split:false,border:false,noheader:true">
+        <div class="header">
+            <ul>
+                <li class="pageTitle" th:utext="${system_web_name}">Quickstart</li>
+                <li class="leftMenu">
+                    <ul><!--<li><a href="#">系统管理</a></li>--></ul>
+                </li>
+                <li class="rightMenu">
+                    <ul>
+                        <!--<li><a class="avatar" href="#"><img src="/img/avatar.jpg" alt="avatar"/></a></li>-->
+                        <li><a href="javascript:">个人设置</a></li>
+                        <li><a href="javascript:">注销登录</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <!--<div data-options="region:'east',title:'East',split:true" style="width:100px;"></div>-->
+    <div title="Menu" id="left" data-options="region:'west',split:false,border:true,noheader:false">
+        <div class="easyui-accordion slideMenu" data-options="fit:true,border:false"></div>
+    </div>
+    <div title="Container" id="center" data-options="region:'center',split:false,border:false,noheader:true"
+         style="overflow: hidden;">
+        <div id="tabs" class="easyui-tabs"
+             data-options="split:false,border:false,fit:false,tools:'#tabsTools',onContextMenu:onContextMenu"
+             style="width:100%;height:100%;">
+            <div iconCls="fa fa-dashboard" title="工作台"
+                 data-options="fit:false,cache:false,border:true,content:'<iframe src=\'/system/workbench\' scrolling=\'auto\' frameborder=\'0\' style=\'width:100%;height:100%;\'></iframe>'"></div>
+        </div>
+        <div id="tabsTools">
+            <a href="javascript:" class="easyui-linkbutton" plain="true" iconCls="fa fa-dashboard"
+               onclick="tabsTo('#tabs',0)"></a>
+            <a href="javascript:" class="easyui-linkbutton" plain="true" iconCls="fa fa-refresh"
+               onclick="refreshTabIframe('#tabs')"></a>
+            <a href="javascript:" class="easyui-linkbutton" plain="true" iconCls="fa fa-close"
+               onclick="closeSelectedTab('#tabs')"></a>
+        </div>
+
+    </div>
+    <div title="Footer" id="bottom" data-options="region:'south',split:false,border:true,noheader:true">
+        <div class="footer" th:utext="${SYSTEM_WEB_FOOTER}">Copyright &copy; 2017 Quickstart.All rights reserved.</div>
+    </div>
+</div>
+<script type="text/javascript">
+
+    $(function () {
+        parentMenu();
+    });
+
+    /**
+     * @desc 显示一级父菜单
+     */
+    function parentMenu() {
+        var leftMenu = $('.leftMenu ul');
+        util.ajax({
+            async: true, url: api.system + '/menu/list/parentMenu'
+            , success: function (result) {
+
+                util.response.ok(result, function (data, message, code) {
+                    var menus = data;
+                    for (var i = 0; i < menus.length; i++) {
+                        var menuId = menus[i].id;
+                        var menuName = menus[i].name;
+                        if (i === 0) {
+                            // 第一个父级菜单默认选中
+                            leftMenu.append('<li><a class="parentMenu selected" onclick="childMenu2(this,' + menuId + ');" href="javascript:">' + menuName + '</a></li>');
+                        } else {
+                            leftMenu.append('<li><a class="parentMenu" onclick="childMenu2(this,' + menuId + ');" href="javascript:">' + menuName + '</a></li>');
+                        }
+                    }
+                });
+
+                // 默认点击第一个父级菜单，并显示其所有子菜单
+                $('.parentMenu').eq('0').trigger('click');
+            }
+        });
+    }
+
+    /**
+     * @desc 显示二级子菜单菜单
+     * @param currentSelector
+     * @param parentId
+     */
+    function childMenu2(currentSelector, parentId) {
+        removeAllFirstMenuSelectedClass(currentSelector);
+        removeAccordionPanel();
+        var slideMenu = $('.slideMenu');
+        if (!parentId) {
+            return;
+        }
+
+        util.ajax({
+            async: false, url: api.system + '/menu/list/childMenu/byParentId/' + parentId
+            , success: function (result) {
+                util.response.ok(result, function (data) {
+                    var menus = data;
+                    for (var i = 0; i < menus.length; i++) {
+                        var parentId = menus[i].id;
+
+                        if (i === 0) {
+                            console.log(parentId);
+                            slideMenu.accordion('add', {
+                                title: menus[i].name,
+                                content: '<div id="childMenu34_' + parentId + '"></div>', // 三级子菜单和四级子菜单寄存
+                                selected: true
+                            });
+                        } else {
+                            slideMenu.accordion('add', {
+                                title: menus[i].name,
+                                content: '<div id="childMenu34_' + parentId + '"></div>', // 三级子菜单和四级子菜单寄存
+                                selected: false
+                            });
+                        }
+
+                        childMenu34('#childMenu34_' + parentId, parentId);
+
+                    }
+                })
+            }
+        });
+
+    }
+
+    /**
+     * @desc 显示三级子菜单和四级子菜单
+     * @param selector
+     * @param parentId
+     */
+    function childMenu34(selector, parentId) {
+        util.ajax({
+            // 获取三级子菜单，可能是文件夹可能是直接可点击的菜单
+            url: api.system + '/menu/list/childMenu/byParentId/' + parentId,
+            success: function (result) {
+                util.response.ok(result, function (data) {
+                    var menus = data;
+                    $(selector).tree({
+                        loadFilter: function (data) {
+                            var menus = data.data ? data.data : data;
+                            for (var i = 0; i < menus.length; i++) {
+                                if (!menus[i].url) {
+                                    menus[i].state = 'closed';
+                                }
+                                menus[i].text = menus[i].name;
+                            }
+                            return menus;
+                        },
+                        data: menus,
+                        lines: true,
+                        animate: true,
+                        onBeforeExpand: function (node, param) {
+                            // 列出四级子菜单，直接可点击的菜单
+                            $(selector).tree('options').url = api.system + '/menu/list/childMenu/byParentId/' + node.id; // godcheese
+                            $(selector).tree('options').method = 'get';
+                        },
+                        onClick: function (node) {
+                            if (node.url) {
+                                addTab('#tabs', node.text, node.url, true, node.id);
+                            } else {
+                                $(selector).tree('toggle', node.target);
+                            }
+                        }
+                    });
+                })
+            }
+        });
+    }
+
+    /**
+     * @desc 移除左侧Accordion已有的菜单
+     */
+    function removeAccordionPanel() {
+        var slideMenu = $('.slideMenu');
+        var panels = slideMenu.accordion('panels');
+        var panelsLength = panels.length;
+        if (panelsLength > 0) {
+            for (var i = 0; i < panelsLength; i++) {
+                slideMenu.accordion('remove', 0);
+            }
+        }
+    }
+
+    /**
+     * @desc 移除所有一级父菜单的 selected class，然后 selected 当前被点击的一级菜单
+     * @param currentSelector
+     */
+    function removeAllFirstMenuSelectedClass(currentSelector) {
+        $('.parentMenu').each(function (i, e) {
+            $(e).removeClass('selected');
+        });
+        $(currentSelector).addClass('selected');
+    }
+
+    /**
+     * @desc 添加 tab
+     * @param tabsSelector
+     * @param title
+     * @param url
+     * @param closable
+     * @param index
+     */
+    function addTab(tabsSelector, title, url, closable, index) {
+        var tabs = $(tabsSelector).tabs('tabs');
+        var tabsLength = tabs.length;
+        index = tabsLength + 1;
+        if ($(tabsSelector).tabs('exists', title)) {
+            $(tabsSelector).tabs('select', title);
+            return;
+        }
+        var iframe = '<iframe src="' + url + '" scrolling="auto" frameborder="0" style="border:0;width:100%;height:100%;"></iframe>';
+        $(tabsSelector).tabs('add', {
+            id: Math.random(),
+            title: title,
+            index: index,
+            selected: true,
+            closable: (closable === undefined) || (closable === null) || (closable === true),
+            content: iframe, // iframe框架内加载
+            // href:url, // 可能会出现元素重复加载的情况，js、css等都会出现问题
+            iconCls: 'fa fa-file-text',
+            fit: true,
+            border: false,
+            cache: false
+        });
+
+    }
+
+    /**
+     * @desc 跳转至指定 index
+     * @param tabsSelector
+     * @param index
+     */
+    function tabsTo(tabsSelector, index) {
+        $(tabsSelector).tabs('select', index);
+    }
+
+    /**
+     * @desc 关闭选中tab
+     * @param tabsSelector
+     */
+    function closeSelectedTab(tabsSelector) {
+        var tab = $(tabsSelector).tabs('getSelected');
+        var index = $(tabsSelector).tabs('getTabIndex', tab);
+        if (index !== 0) {
+            $(tabsSelector).tabs('close', index);
+        }
+    }
+
+    /**
+     * @desc 刷新指定 tabs 内的 tab
+     * @param tabsSelector
+     */
+    function refreshTabIframe(tabsSelector) {
+        var tab = $(tabsSelector).tabs('getSelected');
+        var iframe = tab.find('iframe')[0];
+        iframe.contentWindow.location.href = iframe.src;
+    }
+
+    var onContextMenu = function (event, title, index) {
+        event.preventDefault();
+        if (index >= 0) {
+            tabsTo('#tabs', index);
+            $('#tabsContextMenu').menu('show', {
+                left: event.pageX,
+                top: event.pageY
+            }).data('tabTitle', title);
+        }
+    };
+
+    // tab右键菜单
+    $('#tabsContextMenu').menu({
+        onClick: function (item) {
+            tabsContextMenu(this, item.name);
+        }
+    });
+
+    function tabsContextMenu(menu, type) {
+        var tabsSelector = $('#tabs');
+        var tabs = tabsSelector.tabs('tabs');
+        var tabsTitle = [];
+        var refreshTab, refreshIframe;
+        var i;
+
+        $.each(tabs, function (i, e) {
+            var options = $(e).panel('options');
+            if (options.closable)
+                tabsTitle.push(options.title);
+        });
+        var currentTabTitle = $(menu).data('tabTitle');
+        var currentTabIndex = tabsSelector.tabs('getTabIndex', tabsSelector.tabs('getTab', currentTabTitle));
+        switch (parseInt(type)) {
+            case 1://关闭当前
+                if (currentTabIndex === 0) {
+                    $.messager.show({
+                        title: '操作提示',
+                        msg: '工作台不允许关闭'
+                    });
+                }
+                if (currentTabIndex > 0) {
+                    tabsSelector.tabs('close', currentTabTitle);
+                }
+                break;
+            case 2://全部关闭
+                for (i = 0; i < tabsTitle.length; i++) {
+                    tabsSelector.tabs('close', tabsTitle[i]);
+                }
+                break;
+            case 3://除此之外全部关闭
+                for (i = 0; i < tabsTitle.length; i++) {
+                    if (currentTabTitle !== tabsTitle[i])
+                        tabsSelector.tabs('close', tabsTitle[i]);
+                }
+                tabsSelector.tabs('select', currentTabTitle);
+                break;
+            case 4://当前侧面右边
+                for (i = currentTabIndex; i < tabsTitle.length; i++) {
+                    tabsSelector.tabs('close', tabsTitle[i]);
+                }
+                tabsSelector.tabs('select', currentTabTitle);
+                break;
+            case 5: //当前侧面左边
+                for (i = 0; i < currentTabIndex - 1; i++) {
+                    tabsSelector.tabs('close', tabsTitle[i]);
+                }
+                tabsSelector.tabs('select', currentTabTitle);
+                break;
+            case 6: //刷新
+                refreshTab = tabsSelector.tabs('getSelected');
+                refreshIframe = refreshTab.find('iframe')[0];
+                refreshIframe.contentWindow.location.href = refreshIframe.src;
+                break;
+            case 7: //在新窗口打开
+                refreshTab = tabsSelector.tabs('getSelected');
+                refreshIframe = refreshTab.find('iframe')[0];
+                window.open(refreshIframe.src);
+                break;
+        }
+    }
+
+
+</script>
+</body>
+</html>

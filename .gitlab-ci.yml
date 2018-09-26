@@ -1,0 +1,14 @@
+stages:
+- build
+
+build:
+  stage: build
+  services:
+  - mysql:5.7
+  image: maven:3.5-jdk-8
+  before_script:
+  script:
+  - java -version
+  - mvn -V
+  - mvn -e clean install -DskipTests=true -Dmaven.javadoc.skip=true -Dspring-boot.run.profiles=dev
+  - mvn -e clean install -DskipTests=true -Dmaven.javadoc.skip=true -Dspring-boot.run.profiles=prod

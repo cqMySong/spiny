@@ -1,0 +1,24 @@
+os: linux
+jdk: oraclejdk1.8
+dist: trusty
+sudo: true # faster builds
+group: stable
+addons:
+  apt:
+    sources:
+    - mysql-5.7-trusty
+    packages:
+    - mysql-server
+    - mysql-client
+build:
+  - ./mvnw -e clean install -DskipTests=true -Dmaven.javadoc.skip=true -Dspring-boot.run.profiles=dev
+  - ./mvnw -e clean install -DskipTests=true -Dmaven.javadoc.skip=true -Dspring-boot:run.prifiles=prod
+language: java
+services:
+- mysql
+before_build:
+- chmod +x mvnw
+- sudo mysql -e "use mysql; update user set authentication_string=PASSWORD('123456') where User='root'; update user set plugin='mysql_native_password';FLUSH PRIVILEGES;"
+- sudo service mysql restart
+- sudo mysql -uroot -p123456 -e 'CREATE DATABASE IF NOT EXISTS spiny;'
+- sudo mysql -uroot -p123456 spiny < db/mysql/spiny/init.sql;

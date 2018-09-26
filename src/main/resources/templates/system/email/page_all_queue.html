@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <div th:replace="./widget/base"></div>
+</head>
+<body>
+
+
+<div id="queueToolbar">
+    <!--<a th:if="${#authorization.expression('hasRole('''+ SYSTEM_ADMIN +''') OR hasAuthority(''/COMPONENT/SYSTEM/VIEW_PAGE/PAGE_ALL/VIEW_PAGE_CATEGORY_ADD_DIALOG'')')}" href="javascript:" class="easyui-linkbutton" iconCls="fa fa-plus" plain="true" onclick="viewPageCategoryAddDialog();">新增</a>-->
+
+    <!--<a th:if="${#authorization.expression('hasRole('''+ SYSTEM_ADMIN +''') OR hasAuthority(''/COMPONENT/SYSTEM/VIEW_PAGE/PAGE_ALL/VIEW_PAGE_CATEGORY_EDIT_DIALOG'')')}" href="javascript:" class="easyui-linkbutton" iconCls="fa fa-edit" plain="true" onclick="viewPageCategoryEditDialog();">编辑</a>-->
+    <a th:if="${#authorization.expression('hasRole('''+ SYSTEM_ADMIN +''') OR hasAuthority(''/COMPONENT/SYSTEM/EMAIL/EDIT_AND_SEND'')')}"
+       href="javascript:" class="easyui-linkbutton" iconCls="fa fa-reply" plain="true" onclick="editAndSendDialog();">编辑重发</a>
+
+    <a th:if="${#authorization.expression('hasRole('''+ SYSTEM_ADMIN +''') OR hasAuthority(''/COMPONENT/SYSTEM/EMAIL/EDIT_AND_SEND'')')}"
+       href="javascript:" class="easyui-linkbutton" iconCls="fa fa-reply" plain="true" onclick="editDialog();">编辑（用于测试）</a>
+
+    <a th:if="${#authorization.expression('hasRole('''+ SYSTEM_ADMIN +''') OR hasAuthority(''/COMPONENT/SYSTEM/EMAIL/QUEUE_DELETE_ALL'')')}"
+       href="javascript:" class="easyui-linkbutton" iconCls="fa fa-close" plain="true"
+       onclick="queueDeleteAll();">删除</a>
+
+    <a th:if="${#authorization.expression('hasRole('''+ SYSTEM_ADMIN +''') OR hasAuthority(''/COMPONENT/SYSTEM/EMAIL/QUEUE_RELOAD'')')}"
+       href="javascript:" class="easyui-linkbutton" iconCls="fa fa-refresh" plain="true" onclick="queueReload();">刷新</a>
+</div>
+
+<table id="queue"></table>
+
+<script type="text/javascript">
+
+    $(function () {
+
+        var SMS_STATUS = [];
+        expressui.ajax({
+            url: Api.System.DICTIONARY + '/list_all_by_key/SMS_STATUS',
+            async: false,
+            success: function (data) {
+                if (data) {
+                    SMS_STATUS = data;
+                }
+            }
+        });
+
+        var IS_OR_NOT = [];
+        expressui.ajax({
+            url: Api.System.DICTIONARY + '/list_all_by_key/IS_OR_NOT',
+            async: false,
+            success: function (data) {
+                if (data) {
+                    IS_OR_NOT = data;
+                }
+            }
+        });
+
+        // 邮件发送队列
+        var columns = [
+            {field: 'checkbox', checkbox: true},
+            {field: 'id', title: 'ID'},
+            {
+                field: 'status', title: '状态', formatter: function (value, row, index) {
+                    return expressui.grid.formatter(value, SMS_STATUS);
+                }
+            },
+            {field: 'from', title: '发件人'},
+            {field: 'to', title: '收件人'},
+            {field: 'subject', title: '主题'},
+            {field: 'text', title: '内容'},
+            {
+                field: 'html', title: '是否为 HTML', formatter: function (value, row, index) {
+                    return expressui.grid.formatter(value, IS_OR_NOT);
+                }
+            },
+            {field: 'error', title: '发信报错'},
+            {field: 'remark', title: '备注'},
+            {field: 'gmtModified', title: '更新时间'},
+            {field: 'gmtCreated', title: '创建时间'}
+        ];
+        $('#queue').datagrid(expressui.grid.create, {
+            title: '邮件队列',
+            url: Api.System.EMAIL + '/page_all_queue',
+            columns: [columns]
+        });
+
+    });
+
+    function editAndSendDialog() {
+
+        var one = $('#queue').datagrid(expressui.grid.getCheckedOneShowAlert);
+        if (one) {
+            $('#editAndSendDialog').dialog(expressui.dialog.create, {
+                title: '编辑重发',
+                grid: {type: 'datagrid', selector: '#queue'},
+                href: Page.System.EMAIL + '/edit_and_send_dialog',
+                get: {url: Api.System.EMAIL + '/one/{id}', method: 'get'},
+                save: {url: Api.System.EMAIL + '/add_one', method: 'post'},
+                buttons: [{
+                    text: '发送',
+                    iconCls: 'fa fa-save',
+                    handler: expressui.dialog.save,
+                    reload: [{type: 'datagrid', selector: '#queue'}],
+                    success: '操作成功'
+                }, {
+                    text: '关闭',
+                    iconCls: 'fa fa-close',
+                    handler: expressui.dialog.close
+                }]
+            });
+        }
+    }
+
+
+    /**
+     * 用于测试
+     */
+    function editDialog() {
+
+        var one = $('#queue').datagrid(expressui.grid.getCheckedOneShowAlert);
+        if (one) {
+            $('#editDialog').dialog(expressui.dialog.create, {
+                title: '编辑重发',
+                grid: {type: 'datagrid', selector: '#queue'},
+                href: Page.System.EMAIL + '/edit_and_send_dialog',
+                // get: {url: Api.System.EMAIL + '/one/{id}', method: 'get'},
+                data: function() {
+
+                    var data = {
+                        error: "Mail server connection failed; nested exception is com.sun.mail.util.MailConnectException: Couldn't connect to host, port: smtp.exmail.qq.com, 25; timeout -1;↵  nested exception is:↵	java.net.UnknownHostException: smtp.exmail.qq.com. Failed messages: com.sun.mail.util.MailConnectException: Couldn't connect to host, port: smtp.exmail.qq.com, 25; timeout -1;↵  nested exception is:↵	java.net.UnknownHostException: smtp.exmail.qq.com",
+                        from: "no-reply@gioov.net",
+                        gmtCreated: "2018-07-11 19:26:33",
+                        gmtModified: "2018-07-11 19:26:33",
+                        html: 0,
+                        id: 24,
+                        remark: "",
+                        status: 3,
+                        subject: "2",
+                        text: "TESTT1112222222222222222222222222222221TT",
+                        to: "godcheese1111111111111111111111@qq.com",
+                    };
+                    return data;
+                },
+                save: function (s) {
+                    console.log(s);
+
+                    $.ajax({url:Url.API + '/test', success:function (data) {
+                            console.log(data);
+                        },error: function (xhr) {
+                            console.log(xhr);
+                        }})
+                },
+                buttons: [{
+                    text: '发送',
+                    iconCls: 'fa fa-save',
+                    handler: expressui.dialog.save,
+                    reload: [{type: 'datagrid', selector: '#queue'}],
+                    success: '操作成功'
+                }, {
+                    text: '关闭',
+                    iconCls: 'fa fa-close',
+                    handler: expressui.dialog.close
+                }]
+            });
+        }
+    }
+
+
+    function queueReload() {
+        expressui.grid.reload({type: 'datagrid', selector: '#queue'})
+    }
+
+    function viewPageCategoryAddDialog() {
+
+        var viewPageCategory = $('#viewPageCategory').treegrid(expressui.grid.getCheckedOneOrMoreShowAlert);
+
+        if (!viewPageCategory) {
+            return;
+        }
+
+        $('#viewPageCategoryAddDialog').dialog(expressui.dialog.create, {
+            title: '新增视图页面分类',
+            grid: {type: 'treegrid', selector: '#viewPageCategory'},
+            href: Page.System.VIEW_PAGE_CATEGORY + '/add_dialog',
+            save: {
+                url: Api.System.VIEW_PAGE_CATEGORY + '/add_one',
+                data: viewPageCategory ? {parentId: viewPageCategory.id} : {},
+                method: 'post'
+            },
+            buttons: [{
+                text: '保存',
+                iconCls: 'fa fa-save',
+                handler: expressui.dialog.add,
+                reload: [{type: 'treegrid', selector: '#viewPageCategory'}, {
+                    type: 'datagrid',
+                    selector: '#viewPage',
+                    data: []
+                }, {type: 'datagrid', selector: '#viewPageComponent', data: []}],
+                success: '新增成功'
+            }, {
+                text: '关闭',
+                iconCls: 'fa fa-close',
+                handler: expressui.dialog.close
+            }]
+        });
+    }
+
+
+    function queueDeleteAll() {
+        $('#queue').datagrid(expressui.grid.deleteRows, {
+            url: Api.System.EMAIL + '/delete_all',
+            method: 'post',
+            success: '删除成功',
+            reload: [{type: 'datagrid', selector: '#queue'}],
+        });
+    }
+
+
+</script>
+
+</body>
+</html>

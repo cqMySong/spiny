@@ -1,0 +1,19 @@
+<div class="submit-form">
+    <table class="submit-table">
+        <tr>
+            <td>
+                <lable>角色：</lable>
+            </td>
+            <td><input name="roleId" class="easyui-textbox" data-options="required:true"></td>
+        </tr>
+    </table>
+</div>
+
+<script type="text/javascript">
+    $('input[name="roleId"]').combobox({
+        url: Api.User.ROLE + '/list_all',
+        method: 'GET',
+        valueField: 'id',
+        textField: 'name'
+    });
+</script>

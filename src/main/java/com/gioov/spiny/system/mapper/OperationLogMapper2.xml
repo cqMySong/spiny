@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gioov.spiny.system.mapper.OperationLogMapper2">
+    <resultMap id="BaseResultMap" type="com.gioov.spiny.system.entity.OperationLogEntity2">
+        <id column="id" property="id" jdbcType="BIGINT"/> <!-- id -->
+        <result column="user_id" property="userId" jdbcType="BIGINT"/> <!-- 操作用户 id -->
+        <result column="user_name" property="userName" jdbcType="VARCHAR"/> <!-- 操作用户 id -->
+        <result column="type" property="type" jdbcType="TINYINT"/> <!-- 操作类型（0=页面访问，1=API 调用） -->
+        <result column="method_name" property="methodName" jdbcType="VARCHAR"/> <!-- 操作方法 -->
+        <result column="operation" property="operation" jdbcType="VARCHAR"/> <!-- 操作内容 -->
+        <result column="gmt_created" property="gmtCreated" jdbcType="TIMESTAMP"/> <!-- 创建时间 -->
+    </resultMap>
+
+    <sql id="TableName">
+        `operation_log`
+    </sql>
+
+    <sql id="BaseColumnList">
+        `ol`.*, `u`.`username` `user_name`
+    </sql>
+
+    <sql id="BaseColumnList2">
+        `ol` LEFT JOIN `user` `u` ON (`ol`.`user_id` = `u`.`id`)
+    </sql>
+
+    <select id="getOne" resultMap="BaseResultMap">
+        SELECT
+        <include refid="BaseColumnList"/>
+        FROM
+        <include refid="TableName"/>
+        <include refid="BaseColumnList2"/>
+        WHERE `id` = #{id} LIMIT 1
+    </select>
+
+    <select id="pageAll" resultMap="BaseResultMap" parameterType="com.gioov.common.mybatis.Pageable">
+        SELECT
+        <include refid="BaseColumnList"/>
+        FROM
+        <include refid="TableName"/>
+        <include refid="BaseColumnList2"/>
+        ${pageable}
+    </select>
+
+    <select id="countAll" resultType="int">
+        SELECT COUNT(1) FROM
+        <include refid="TableName"/>
+    </select>
+
+</mapper>

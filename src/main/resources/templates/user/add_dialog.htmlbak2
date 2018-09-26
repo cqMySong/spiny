@@ -1,0 +1,58 @@
+
+
+.form-table {
+    /*margin: 5px auto;*/
+    margin: 0;
+    padding: 20px 50px;
+}
+
+
+/*.form-table label {*/
+    /*text-align: left;*/
+    /*height: 30px;*/
+    /*line-height: 30px;*/
+/*}*/
+
+
+.form-table tr {
+    display: block;
+}
+
+.form-table tr td{
+    padding: 3px;
+}
+
+<table class="form-table">
+    <tr>
+        <td>
+            <lable>用户名：</lable>
+            <input name="username" class="easyui-textbox" data-options="required:true">
+        </td>
+        <td>
+            <lable>密码：</lable>
+
+            <input name="password" class="easyui-textbox" data-options="required:true">
+        </td>
+    </tr>
+
+    <tr>
+        <td>
+            <lable>电子邮箱：</lable>
+
+       <input name="email" class="easyui-textbox" data-options="required:true"></td>
+        <td>
+            <lable>电子邮箱是否验证通过：</lable>
+
+            <input name="emailIsVerified" class="easyui-combobox"
+                   data-options="required:true,textField:'value',editable:false,valueField:'key',data:[{key:0,value:'未验证',selected:true}, {key:1,value:'已验证'},{key: 'default', value: 0}]">
+        </td>
+    </tr>
+
+    <tr>
+        <td>
+            <lable>备注：</lable>
+
+      <input name="remark" class="easyui-textbox" style="height:50px;"
+                   data-options="required:false,multiline:true"></td>
+    </tr>
+</table>

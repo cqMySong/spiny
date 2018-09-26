@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <div th:replace="./widget/base(title='登录')"></div>
+    <link rel="stylesheet" type="text/css" th:href="@{/css/login.css}">
+    <script type="text/javascript" th:src="@{/js/util.js}" charset="UTF-8"></script>
+
+</head>
+<body>
+<div class="login-hd">
+    <div class="left-bg"></div>
+    <div class="right-bg"></div>
+    <div class="hd-inner">
+        <span class="logo"></span>
+        <span class="split"></span>
+        <span class="sys-name">spiny</span>
+    </div>
+</div>
+<div class="login-bd">
+    <div class="bd-inner">
+        <div class="inner-wrap">
+            <div class="lg-zone">
+                <div class="lg-box">
+                    <div class="lg-label"><h4>用户登录</h4></div>
+                    <div id="alertMessage">
+
+                    </div>
+                    <form method="post" th:action="@{/user/login/form}" id="loginForm">
+                        <div class="lg-username input-item clearfix">
+                            <i class="fa fa-user"></i>
+                            <input type="text" value="system_admin" placeholder="用户名/E-mail" id="account">
+                        </div>
+                        <div class="lg-password input-item clearfix">
+                            <i class="fa fa-lock"></i>
+                            <input type="password" value="123456" placeholder="密码" id="password">
+                        </div>
+                        <div class="lg-check clearfix">
+                            <div class="input-item">
+                                <i class="fa fa-file-image-o"></i>
+                                <input type="text" placeholder="验证码">
+                            </div>
+                            <span class="check-code">XD34F</span>
+                        </div>
+                        <div class="tips clearfix">
+                            <label><input type="checkbox" checked="checked">记住我一周</label>
+                            <a href="javascript:" class="register">立即注册</a>
+                            <a href="javascript:" class="forget-pwd">忘记密码？</a>
+                        </div>
+                        <div class="enter">
+                            <a class="purchaser" href="javascript:" id="loginButton">登录</a>
+                            <!--<a class="supplier" th:href="@{/user/login}">供应商登录</a>-->
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="lg-poster"></div>
+        </div>
+    </div>
+</div>
+<div class="login-ft">
+    <div class="ft-inner">
+        <div class="about-us">
+            <a href="javascript:">关于我们</a>
+            <a href="javascript:">法律声明</a>
+            <a href="javascript:">服务条款</a>
+            <a href="javascript:">联系方式</a>
+        </div>
+        <div class="address">地址：浙江省xx市xxx科技园区xx幢xxx室&nbsp;邮编：320000&nbsp;&nbsp;Copyright&nbsp;©&nbsp;2014&nbsp;-&nbsp;2018&nbsp;&nbsp;版权所有</div>
+        <div class="other-info">建议使用IE8及以上版本浏览器&nbsp;浙ICP备&nbsp;00000000号&nbsp;E-mail：godcheese#outlook.com</div>
+    </div>
+</div>
+<script type="text/javascript">
+
+    $(function () {
+
+        // iframe 框架刷新父页面
+        if (window.top !== window.self) {
+            window.top.location = window.location;
+        }
+
+        $('#loginButton').click(function () {
+
+            var account = $('#account').val();
+            var password = $('#password').val();
+
+            if (account === '' || password === '') {
+                $('#alertMessage').html(' <div class="alert alert-error">\n' +
+                    '                        <i class="fa fa-exclamation-triangle"></i>\n' +
+                    '                        <span id="alertMessage">请先输入账号和密码</span>\n' +
+                    '                    </div>');
+                return;
+            }
+
+            //
+            // try{
+            //     util.ajax({
+            //         data:{
+            //             account: account,
+            //             password: password
+            //         },
+            //         type: 'post',
+            //         url: Api.User.LOGIN,
+            //         success: function (xhr, statusText) {
+            //             $('#alertMessage').html(' <div class="alert alert-success">\n' +
+            //                 '                        <i class="fa fa-exclamation-triangle"></i>\n' +
+            //                 '                        <span id="alertMessage">登录成功</span>\n' +
+            //                 '                    </div>');
+            //             // window.location.href = _contextPath;
+            //
+            //         },
+            //         error: function (xhr, statusText) {
+            //             if (xhr.status === 201) {
+            //                 $('#alertMessage').html(' <div class="alert alert-success">\n' +
+            //                     '                        <i class="fa fa-exclamation-triangle"></i>\n' +
+            //                     '                        <span id="alertMessage">登录成功</span>\n' +
+            //                     '                    </div>');
+            //                 window.location.href = _contextPath;
+            //             } else {
+            //                 // $('#alertMessage').html(' <div class="alert alert-error">\n' +
+            //                 //     '                        <i class="fa fa-exclamation-triangle"></i>\n' +
+            //                 //     '                        <span id="alertMessage">网络错误，或内部服务器问题</span>\n' +
+            //                 //     '                    </div>');
+            //
+            //
+            //                 $('#alertMessage').html(' <div class="alert alert-error">\n' +
+            //                     '                        <i class="fa fa-exclamation-triangle"></i>\n' +
+            //                     '                        <span id="alertMessage">' + xhr.responseJSON.message + '</span>\n' +
+            //                     '                    </div>');
+            //             }
+            //         }
+            //     })
+            // } catch (e) {
+            //
+            //     $('#alertMessage').html(' <div class="alert alert-error">\n' +
+            //         '                        <i class="fa fa-exclamation-triangle"></i>\n' +
+            //         '                        <span id="alertMessage">网络错误，或内部服务器问题</span>\n' +
+            //         '                    </div>');
+            //
+            // }
+
+            $.ajax({
+                url: Api.User.LOGIN,
+                data: {
+                    account: account,
+                    password: password
+                },
+                type: 'post',
+                success: function (XMLHttpRequest, statusText) {
+                    $('#alertMessage').html(' <div class="alert alert-success">\n' +
+                        '                        <i class="fa fa-exclamation-triangle"></i>\n' +
+                        '                        <span id="alertMessage">登录成功</span>\n' +
+                        '                    </div>');
+
+                    // 刷新页面跳转到首页
+                    window.location.href = _contextPath;
+                },
+                error: function (XMLHttpRequest, statusText, errorThrown) {
+                    $('#alertMessage').html(' <div class="alert alert-error">\n' +
+                        '                        <i class="fa fa-exclamation-triangle"></i>\n' +
+                        '                        <span id="alertMessage">' + XMLHttpRequest.responseJSON.message + '</span>\n' +
+                        '                    </div>');
+
+                }
+            });
+
+        });
+
+        var state = util.request.getQueryParam('state');
+        switch (state) {
+            case 'logout':
+                $('#alertMessage').html(' <div class="alert alert-success">\n' +
+                    '                        <i class="fa fa-exclamation-triangle"></i>\n' +
+                    '                        <span id="alertMessage">注销成功</span>\n' +
+                    '                    </div>');
+                break;
+            default:
+                break;
+        }
+
+    });
+
+
+
+    util.document.keyDown(13, function () {
+        $('#loginButton').click();
+    });
+
+</script>
+</body>
+</html>

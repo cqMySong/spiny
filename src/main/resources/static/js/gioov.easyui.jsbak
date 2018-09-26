@@ -1,0 +1,688 @@
+
+var easyui = typeof easyui === "undefined" ? {} : easyui;
+
+easyui.Util ={
+
+    ajax:function (options) {
+        var defaults = {
+            beforeSend:function () {
+
+            },
+            async:true,
+            type:'get',
+            dataType:'json',
+            error:function(result){
+                console.log(result);
+            }
+        };
+
+        options = $.extend(true,defaults,options);
+        return $.ajax(options);
+    },
+
+    httpStatus:function (code,message) {
+        return {code:code,message:message};
+    },
+
+    replacePlaceholder:function (url,object,prefix) {
+        if(url!==undefined && object!==undefined){
+            for(var key in object) {
+                if (object.hasOwnProperty(key)) {
+                    var urlPlaceholder = key;
+                    if(prefix) {
+                        urlPlaceholder = prefix + "." + key;
+                    }
+                    url = url.replace(new RegExp('{' + urlPlaceholder + '}', "gm"), object[key]);
+                }
+            }
+        }
+        return url;
+    },
+
+    getPageComponentType:function (classString,easyuiComponent) {
+        if (classString.indexOf(easyuiComponent)) {
+            return easyuiComponent;
+        }
+    },
+
+    selector:function (selector) {
+        return selector.charAt(0) === '#' ? selector : '#'+selector;
+    },
+
+    undefinedAndNull:function (o) {
+        if(o !== undefined && o !== null){
+            return false
+        }
+        return true;
+    },
+
+    isObject:function (o) {
+        if(typeof o === 'object'){
+            return true;
+        }
+        return false;
+    },
+    // 大括号对象
+    // isObjectBrace:function (o) {
+    //     if(typeof o ==='object'){
+    //         o.toString();
+    //
+    //     }
+    // },
+
+    toObject:function (o) {
+        return eval(o);
+    },
+
+    _successHasMessage:function (result,successCallback) {
+        if (result) {
+            if (result.hasOwnProperty(easyui.Response.CODE)) {
+
+                if (result[easyui.Response.CODE] === easyui.Response.OK.code) {
+                    if(typeof successCallback === 'function') {
+                        successCallback();
+                    }
+                }
+
+                if (result.hasOwnProperty(easyui.Response.MESSAGE)) {
+                    easyui.Messager.show({msg: result[easyui.Response.MESSAGE]});
+                }else{
+                    easyui.Messager.show({msg:easyui.Response[result[easyui.Response.MESSAGE]].message});
+                }
+
+            }
+
+        }
+    },
+
+    _success:function (result,successCallback) {
+        if (result) {
+            if (result.hasOwnProperty(easyui.Response.CODE)) {
+                if (result[easyui.Response.CODE] === easyui.Response.OK.code) {
+                    if(typeof successCallback === 'function') {
+                        successCallback();
+                    }
+                }
+
+            }
+
+        }
+    }
+};
+
+easyui.Response = {
+    OK:easyui.Util.httpStatus(200,'OK'),
+    NOT_FOUND:easyui.Util.httpStatus(404,'Not Found'),
+    UNAUTHORIZED:easyui.Util.httpStatus(401,'Unauthorized'),
+    DATA:'data',
+    MESSAGE:'message',
+    CODE:'code',
+    success:function (result,fnSuccessCallback,fnThenCallback) {
+        if(result){
+            if(result.hasOwnProperty(easyui.Response.CODE)){
+                if(result[easyui.Response.CODE] === easyui.Response.OK.code){
+                    var data;
+                    if(result.hasOwnProperty(easyui.Response.DATA)){
+                        data = result[easyui.Response.DATA];
+                    }
+                    if(fnSuccessCallback) {
+                        fnSuccessCallback(data);
+                    }
+                }
+            }
+        }
+
+        if(fnThenCallback){
+            fnThenCallback();
+        }
+    }
+};
+
+easyui.Grid = {
+    reload :function (grid){
+        if(!easyui.Util.undefinedAndNull(grid)) {
+            var o = easyui.Util.toObject(grid);
+            if(typeof o === 'object') {
+                if(!o.type){
+                    for(var i in o){
+                        if(o.hasOwnProperty(i)){
+                            easyui.Grid._reload(o[i]);
+                        }
+                    }
+                }else{
+                    easyui.Grid._reload(o);
+                }
+            }
+
+        }
+    },
+    _reload:function (grid) {
+        var selector = easyui.Util.selector(grid.id);
+        switch (grid.type) {
+            case 'datagrid':
+                $(selector).datagrid('reload');
+                if(grid.unselect === true){
+                    $(selector).datagrid('unselectAll');
+                }
+                break;
+            case 'tree':
+                easyui.Util.ajax({
+                    url:grid.url,
+                    success:function (result) {
+                        if(result){
+                            if(result.hasOwnProperty(easyui.Response.DATA)){
+                                $(selector).tree('loadData',result[easyui.Response.DATA]);
+                                if(grid.unselect === true){
+                                    $(selector).tree('unselectAll');
+                                }
+                            }
+                        }
+                    }
+
+                });
+                break;
+            case 'treegrid':
+                if(grid.url) {
+                    easyui.Util.ajax({
+                        url: grid.url,
+                        success: function (result) {
+                            if (result) {
+                                easyui.Util._success(result, function () {
+                                    $(selector).treegrid('loadData', result[easyui.Response.DATA]);
+                                    if (grid.unselect === true) {
+                                        $(selector).treegrid('unselectAll');
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }else{
+                    $(selector).treegrid('loadData',grid.data);
+                }
+                break;
+        }
+    }
+};
+
+easyui.Messager = {
+    show: function (options) {
+        var defaults = {
+            title: '信息',
+            msg: '提示',
+            timeout: 1000,
+            showType: 'slide',
+            modal: false,
+            shadow: false,
+            draggable: false,
+            resizable: false,
+            closed: true,
+            style: {
+                left: "",
+                top: "",
+                right: 0,
+                zIndex: 999,
+                bottom: -document.body.scrollTop - document.documentElement.scrollTop
+            },
+            width: 260,
+            height: 120,
+            minHeight: 0,
+            showSpeed: 600
+        };
+        options = $.extend(true,defaults, options);
+        $.messager.show(options);
+    },
+    confirm: function (options) {
+        var defaults = {
+            title: '信息',
+            msg: '确认操作吗？',
+            fn: function (result) {
+                console.log(result);
+            }
+        };
+        options = $.extend(true,defaults,options);
+        $.messager.confirm(options);
+    }
+};
+
+easyui.Datagrid = {
+
+    init:function (selector,options) {
+        selector = easyui.Util.selector(selector);
+        var defaults = {
+            idField:'id',
+            toolbar: selector + 'Toolbar',
+            fit: true,
+            pagination: true,
+            singleSelect: true,
+            method: 'get',
+            pageNumber: 1,
+            pageList: [10, 20, 50, 100],
+            pageSize: 20,
+            loadMsg: '正在加载，请稍等...',
+            emptyMsg:'暂无记录',
+            loadFilter: function (result) {
+                if (undefined === result.data) {
+                    result.data = [];
+                }
+                return result.data;
+            }
+        };
+        options = $.extend(true,defaults,options); // 用户自定义options 通过 $.extend 方法合并到 defaultOptions对象内。
+        $(selector).datagrid(options);
+    },
+
+    deleteRow:function (options) {
+        if(options.id) {
+            var selector = easyui.Util.selector(options.id);
+            var selected = $(selector).datagrid('getSelected');
+            if (selected !== undefined) {
+                var url;
+                if(options.url) {
+                    url = easyui.Util.replacePlaceholder(options.url, selected);
+                }
+                easyui.Util.ajax({
+                    url: url,
+                    type: options.type ? options.type : 'post',
+                    success: function (result) {
+                        easyui.Util._successHasMessage(result,function () {
+
+                            var reloadGrid =options.reload;
+                            if(!easyui.Util.undefinedAndNull(reloadGrid)) {
+                                easyui.Grid.reload(reloadGrid);
+                            }
+                        })
+                    }
+                });
+
+            }
+        }
+    },
+
+    deleteRows:function (options) {
+
+    },
+
+    getSelected:function (selector,options) {
+        selector = easyui.Util.selector(selector);
+        var selected = $(selector).datagrid('getSelected');
+        if(selected){
+            return selected;
+        }
+        if(options && options.showMessage && options.showMessage !== false) {
+            options.message = options.message === undefined ? '请先选中项目' : options.message;
+            easyui.Messager.show({content: options.message});
+        }
+        return false;
+    },
+
+    getSelections:function (selector,options) {
+        selector = easyui.Util.selector(selector);
+        var selections = $(selector).datagrid('getSelections');
+        if (selections) {
+            return selections;
+        }
+        if(options && options.showMessage && options.showMessage !== false) {
+            options.message = options.message === undefined ? '请先选中项目' : options.message;
+            easyui.Messager.show({content: options.message});
+        }
+        return false;
+    },
+
+    singleSelect:function (selector) {
+        selector = easyui.Util.selector(selector);
+        return $(selector).datagrid('options').singleSelect;
+    },
+
+    multipleSelections:function (selector) {
+        selector = easyui.Util.selector(selector);
+        if($(selector).datagrid('options').singleSelect) {
+            $(selector).datagrid({singleSelect: false});
+        }else{
+            $(selector).datagrid({singleSelect: true});
+        }
+        $(selector).datagrid('clearSelections');
+    }
+};
+
+easyui.Treegrid = {
+
+    init:function (selector,options) {
+        selector = easyui.Util.selector(selector);
+        var defaults = {
+            toolbar: selector + 'Toolbar',
+            idField:'id',
+            treeField:'name',
+            fit: true,
+            pagination: false,
+            singleSelect: true,
+            method: 'get',
+            pageNumber: 1,
+            pageList: [10, 20, 50, 100],
+            pageSize: 20,
+            loadMsg: '正在加载，请稍等...',
+            emptyMsg:'暂无记录',
+            onBeforeExpand:function (node, param) {
+                // 列出子级菜单
+                $(selector).treegrid('options').url= easyui.Util.replacePlaceholder(options.expandUrl,node);// godcheese
+            },
+            // loadFilter:function (result) {
+            //     var item = result.data ? result.data : result;
+            //     for(var i in item){
+            //         if(item.hasOwnProperty(i)) {
+            //             if ((item[i].url === undefined || item[i].url === null)) {
+            //                 item[i].state = 'closed';
+            //             }
+            //         }
+            //     }
+            //     return item;
+            // },
+
+            onDblClickRow:function (row) {
+                $(selector).treegrid('unselectAll');
+                $(selector).treegrid('toggle',row.id);
+            },
+        };
+        options = $.extend(true,defaults,options); // 用户自定义options 通过 $.extend 方法合并到 defaultOptions对象内。
+        if(options.url) {
+            easyui.Util.ajax({
+                url: options.url, success: function (result) {
+                    if (result) {
+                        easyui.Util._success(result, function () {
+                            options.data = result[easyui.Response.DATA];
+                            $(selector).treegrid(options);
+                        });
+                    }
+                }
+            });
+        }else{
+            $(selector).treegrid(options);
+        }
+
+    },
+
+    deleteRow:function (options) {
+        if(options.id) {
+            var selector = easyui.Util.selector(options.id);
+            var selected = $(selector).treegrid('getSelected');
+            if (selected !== undefined) {
+                var url;
+                if(options.url) {
+                    url = easyui.Util.replacePlaceholder(options.url, selected);
+                }
+                easyui.Util.ajax({
+                    url: url,
+                    type: options.type ? options.type : 'post',
+                    success: function (result) {
+                        easyui.Util._successHasMessage(result,function () {
+                            var reloadGrid =options.reload;
+                            if(!easyui.Util.undefinedAndNull(reloadGrid)) {
+                                easyui.Grid.reload(reloadGrid);
+                            }
+                        })
+                    }
+                });
+
+            }
+        }
+    },
+
+    deleteRows:function (options) {
+
+    },
+
+    getSelected:function (selector,options) {
+        selector = easyui.Util.selector(selector);
+        var selected = $(selector).treegrid('getSelected');
+        if(selected){
+            return selected;
+        }
+        if(options && options.showMessage && options.showMessage !== false) {
+            options.message = options.message === undefined ? '请先选中项目' : options.message;
+            easyui.Messager.show({content: options.message});
+        }
+        return false;
+    },
+
+    getSelections:function (selector,options) {
+        selector = easyui.Util.selector(selector);
+        var selections = $(selector).treegrid('getSelections');
+        if (selections) {
+            return selections;
+        }
+        if(options && options.showMessage && options.showMessage !== false) {
+            options.message = options.message === undefined ? '请先选中项目' : options.message;
+            easyui.Messager.show({content: options.message});
+        }
+        return false;
+    },
+
+    singleSelect:function (selector) {
+        selector = easyui.Util.selector(selector);
+        return $(selector).datagrid('options').singleSelect;
+    },
+
+    multipleSelections:function (selector) {
+        selector = easyui.Util.selector(selector);
+        if($(selector).datagrid('options').singleSelect) {
+            $(selector).datagrid({singleSelect: false});
+        }else{
+            $(selector).datagrid({singleSelect: true});
+        }
+        $(selector).datagrid('clearSelections');
+    },
+
+    uncheckAllNodes:function(selector) {
+        selector = easyui.Util.selector(selector);
+        var nodes = $(selector).treegrid('getCheckedNodes');
+        if (nodes.length > 0) {
+            for (var i in nodes) {
+                if (nodes.hasOwnProperty(i)) {
+                    $(selector).treegrid('uncheckNode', nodes[i].id);
+
+                }
+            }
+        }
+    },
+
+    getCheckedNodes:function (selector) {
+        selector = easyui.Util.selector(selector);
+        return $(selector).treegrid('getCheckedNodes');
+    },
+
+    update:function (selector) {
+        selector = easyui.Util.selector()
+
+    }
+
+};
+
+easyui.Dialog = {
+
+    save:function (selector) {
+        selector = easyui.Util.selector(selector);
+        var serialize = $(selector).find('form').serialize();
+
+        try{
+            easyui.Util.ajax({
+                beforeSend: function () {
+                    $.messager.progress();
+                },
+                url: $(selector).dialog('options').post,
+                type: 'post',
+                data: serialize,
+                success: function (result) {
+                    if (result) {
+                        easyui.Util._successHasMessage(result,function () {
+                            var reloadGrid = $(selector).dialog('options').reload;
+                            if(reloadGrid) {
+                                easyui.Grid.reload(reloadGrid);
+                            }
+                            $(selector).dialog('close');
+                        });
+                    }
+                }
+            })
+        }catch (e){
+            console.log(e);
+        }finally {
+            $.messager.progress('close');
+        }
+    },
+
+    close:function (selector) {
+        selector = easyui.Util.selector(selector);
+        $(selector).dialog('close');
+        $(selector).dialog('destroy');
+    },
+
+    _replacePlaceHolder:function (options,grid) {
+        var selector = easyui.Util.selector(grid.id);
+        var selected;
+        switch (grid.type) {
+            case 'datagrid':
+                selected = $(selector).datagrid('getSelected');
+                break;
+            case 'tree':
+                selected = $(selector).tree('getSelected');
+                break;
+            case 'treegrid':
+                selected = $(selector).treegrid('getSelected');
+                break;
+            default:
+                return;
+        }
+        if(!easyui.Util.undefinedAndNull(grid.prefix)) {
+            if(options.get) {
+                options.get = easyui.Util.replacePlaceholder(options.get, selected,grid.prefix);
+            }
+            if(options.post) {
+                options.post = easyui.Util.replacePlaceholder(options.post, selected, grid.prefix);
+            }
+            if(url){
+                options.url = easyui.Util.replacePlaceholder(options.url, selected, grid.prefix);
+            }
+            if(href){
+                options.href = easyui.Util.replacePlaceholder(options.href, selected, grid.prefix);
+            }
+        }else{
+            if(!easyui.Util.undefinedAndNull(options.get)) {
+                options.get = easyui.Util.replacePlaceholder(options.get, selected);
+            }
+            if(!easyui.Util.undefinedAndNull(options.post)) {
+                options.post = easyui.Util.replacePlaceholder(options.post, selected);
+            }
+            if(!easyui.Util.undefinedAndNull(options.url)){
+                options.url = easyui.Util.replacePlaceholder(options.url, selected);
+            }
+            if(!easyui.Util.undefinedAndNull(options.href)){
+                options.href = easyui.Util.replacePlaceholder(options.href, selected);
+            }
+        }
+    },
+
+    open:function (options) {
+        var random = Math.random() * 100000000000000000;
+        random =  Math.floor(random);
+        if(options.id===undefined){
+            options.id= 'gioov_easyui_dialog_'+random;
+        }
+        var selector = easyui.Util.selector(options.id);
+
+        if(options.grid) {
+            var o = easyui.Util.toObject(options.grid);
+
+            if(!o.type){
+                for(var i in o){
+                    if(o.hasOwnProperty(i)) {
+                        easyui.Dialog._replacePlaceHolder(options, o[i]);
+                    }
+                }
+            }else{
+                easyui.Dialog._replacePlaceHolder(options,o);
+            }
+        }
+        $('body').append('<div id='+options.id+'></div>');
+        var defaults = {
+            // dialog
+            // title: '对话框',
+            collapsible: true,
+            minimizable: false,
+            maximizable: true,
+            resizable: true,
+            toolbar: null,
+            width: 400,
+            height:300,
+            buttons: [{
+                text: '保存',
+                iconCls: 'fa fa-save',
+                handler: function () {
+                    easyui.Dialog.save(selector);
+                }
+            }, {
+                text: '关闭',
+                iconCls: 'fa fa-close',
+                handler: function () {
+                    $(selector).dialog('close');
+                }
+            }],
+            // window
+            closable: true,
+            closed: false,
+            zIndex: 9000,
+            draggable: true,
+            shadow: true,
+            inline: false,
+            modal: true,
+            border: true, // true,false,'thin','thick'
+            constrain: false,
+            // panel
+            // id	null,
+            iconCls: null,
+            fit: false,
+            content: null,
+            halign: 'top', // top/left/right
+            titleDirection: 'down', // up/down
+            header: null,
+            openAnimation: 'slide',//  'slide','fade','show'
+            openDuration: 200,
+            closeAnimation: 'slide', // 'slide','fade','show'
+            closeDuration: 200,
+            href: null,
+            // loadingMessage: '正在加载…',
+            method: 'get',
+            queryParams: null,
+            onClose: function () {
+                $(selector).dialog('destroy');
+            },
+            onLoad: function () {
+                if (options.get !== undefined) {
+                    $.ajax({
+                        url: options.get,
+                        type: 'get',
+                        dataType: 'json',
+                        success: function (result) {
+                            if(result) {
+                                if (result[easyui.Response.CODE] === easyui.Response.OK.code) {
+                                    $(selector).form('load', result[easyui.Response.DATA]);
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+
+        };
+
+        options = $.extend(true,defaults,options); // 用户自定义options 通过 $.extend 方法合并到 defaultOptions对象内。
+        $(selector).dialog(options);
+        $(selector).dialog('open');
+        return options.id;
+    }
+};
+
+if(gioov === undefined){
+    var gioov = {easyui:easyui}
+}
+
+gioov.easyui = easyui;
+

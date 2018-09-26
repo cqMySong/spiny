@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gioov.spiny.common.logback.mapper.LoggingEventMapper">
+    <resultMap id="BaseResultMap" type="com.gioov.spiny.common.logback.entity.LoggingEventEntity">
+        <id column="event_id" property="eventId" jdbcType="BIGINT"/> <!-- id -->
+        <result column="timestmp" property="timestmp" jdbcType="BIGINT"/>
+        <result column="thread_name" property="threadName" jdbcType="VARCHAR"/>
+        <result column="level_string" property="levelString" jdbcType="VARCHAR"/>
+        <result column="logger_name" property="loggerName" jdbcType="VARCHAR"/>
+        <result column="caller_filename" property="callerFilename" jdbcType="VARCHAR"/>
+        <result column="caller_class" property="callerClass" jdbcType="VARCHAR"/>
+        <result column="caller_method" property="callerMethod" jdbcType="VARCHAR"/>
+        <result column="caller_line" property="callerLine" jdbcType="INTEGER"/>
+        <result column="formatted_message" property="formattedMessage" jdbcType="VARCHAR"/>
+        <result column="reference_flag" property="referenceFlag" jdbcType="INTEGER"/>
+        <result column="arg0" property="arg0" jdbcType="VARCHAR"/>
+        <result column="arg1" property="arg1" jdbcType="VARCHAR"/>
+        <result column="arg2" property="arg2" jdbcType="VARCHAR"/>
+        <result column="arg3" property="arg3" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="TableName">
+        `logging_event`
+    </sql>
+
+    <sql id="BaseColumnList">
+        `event_id`, `timestmp`, `thread_name`, `level_string`, `logger_name`, `caller_filename`, `caller_class`, `caller_method`, `caller_line`, `formatted_message`, `reference_flag`, `arg0`, `arg1`, `arg2`, `arg3`
+    </sql>
+
+    <delete id="deleteAll">
+        DELETE FROM
+        <include refid="TableName"/>
+        WHERE `id` IN
+        (
+        <foreach collection="list" item="item" index="index" separator=",">
+            #{item}
+        </foreach>
+        )
+    </delete>
+
+    <select id="getOne" resultMap="BaseResultMap">
+        SELECT
+        <include refid="BaseColumnList"/>
+        FROM
+        <include refid="TableName"/>
+        WHERE `id` = #{id} LIMIT 1
+    </select>
+
+    <select id="pageAll" resultMap="BaseResultMap" parameterType="com.gioov.common.mybatis.Pageable">
+        SELECT
+        <include refid="BaseColumnList"/>
+        FROM
+        <include refid="TableName"/>
+        ${pageable}
+    </select>
+    <select id="countAll" resultType="int">
+        SELECT COUNT(1) FROM
+        <include refid="TableName"/>
+    </select>
+
+</mapper>
