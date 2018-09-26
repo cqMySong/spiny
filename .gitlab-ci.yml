@@ -1,8 +1,8 @@
 stages:
-- build
+- install
 
-build:
-  stage: build
+install:
+  stage: install
   services:
   - mysql:5.7
   image: maven:3.5-jdk-8
